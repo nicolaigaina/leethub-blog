@@ -1,8 +1,8 @@
 import argon2 from 'argon2';
 import { MyContext } from 'src/types';
 import { Arg, Ctx, Mutation, Query, Resolver } from 'type-graphql';
+import { getConnection } from 'typeorm';
 import { v4 } from 'uuid';
-import { EntityManager } from '@mikro-orm/postgresql';
 import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from '../constants';
 import { User } from '../entities/User';
 import { sendEmail } from '../utils/sendEmail';
@@ -16,7 +16,7 @@ export class UserResolver {
   async changePassword(
     @Arg("token") token: string,
     @Arg("newPassword") newPassword: string,
-    @Ctx() { redis, em, req }: MyContext
+    @Ctx() { redis, req }: MyContext
   ): Promise<UserResponse> {
     if (newPassword.length <= 2) {
       return {
@@ -42,7 +42,8 @@ export class UserResolver {
       };
     }
 
-    const user = await em.findOne(User, { id: parseInt(userId) });
+    const userIdNum = parseInt(userId);
+    const user = await User.findOne(userIdNum);
     if (!user) {
       return {
         errors: [
@@ -54,8 +55,12 @@ export class UserResolver {
       };
     }
 
-    user.password = await argon2.hash(newPassword);
-    await em.persistAndFlush(user);
+    await User.update(
+      { id: userIdNum },
+      {
+        password: await argon2.hash(newPassword),
+      }
+    );
 
     // reomve the key from redis db so that the token could not be re-used again
     // to change the password
@@ -71,9 +76,9 @@ export class UserResolver {
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg("email") email: string,
-    @Ctx() { em, redis }: MyContext
+    @Ctx() { redis }: MyContext
   ): Promise<boolean> {
-    const user = await em.findOne(User, { email });
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       // email is not in the database
       return true;
@@ -94,19 +99,18 @@ export class UserResolver {
   }
 
   @Query(() => User, { nullable: true })
-  async me(@Ctx() { req, em }: MyContext): Promise<User | null> {
+  me(@Ctx() { req }: MyContext) {
     if (!req.session.userId) {
       return null;
     }
 
-    const user = await em.findOne(User, { id: req.session.userId });
-    return user;
+    return User.findOne(req.session.userId);
   }
 
   @Mutation(() => UserResponse)
   async register(
     @Arg("options") options: UsernamePasswordInput,
-    @Ctx() { em, req }: MyContext
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
     let response: UserResponse;
     const errors = validateRegister(options);
@@ -115,20 +119,22 @@ export class UserResolver {
     } else {
       // succesfull registration
       const hashedpassword = await argon2.hash(options.password);
-
+      let user: User;
       try {
-        const [user] = await (em as EntityManager)
-          .createQueryBuilder(User)
-          .getKnexQuery()
-          .insert({
+        // User.create({}).save()
+        const result = await getConnection()
+          .createQueryBuilder()
+          .insert()
+          .into(User)
+          .values({
             username: options.username,
             password: hashedpassword,
             email: options.email,
-            created_at: new Date(),
-            updated_at: new Date(),
           })
-          .returning("*"); // return all user fields
+          .returning("*")
+          .execute();
 
+        user = result.raw[0];
         response = {
           user,
         };
@@ -169,15 +175,14 @@ export class UserResolver {
   async login(
     @Arg("usernameOrEmail") usernameOrEmail: string,
     @Arg("password") password: string,
-    @Ctx() { em, req }: MyContext
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
     let response: UserResponse;
-    const user = (await em.findOne(
-      User,
+    const user = await User.findOne(
       usernameOrEmail.includes("@")
-        ? { email: usernameOrEmail }
-        : { username: usernameOrEmail }
-    )) as User;
+        ? { where: { email: usernameOrEmail } }
+        : { where: { username: usernameOrEmail } }
+    );
     if (!user) {
       // No user was found
       // Build no user found error object

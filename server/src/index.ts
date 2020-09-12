@@ -6,9 +6,10 @@ import express from 'express';
 import session from 'express-session';
 import Redis from 'ioredis';
 import { buildSchema } from 'type-graphql';
-import { MikroORM } from '@mikro-orm/core';
+import { createConnection } from 'typeorm';
 import { __prod__, COOKIE_NAME } from './constants';
-import microConfig from './mikro-orm.config';
+import { Post } from './entities/Post';
+import { User } from './entities/User';
 import { HelloResolver } from './resolvers/hello';
 import { PostResolver } from './resolvers/post';
 import { UserResolver } from './resolvers/user';
@@ -16,11 +17,17 @@ import { UserResolver } from './resolvers/user';
 const PORT = 4000;
 
 const main = async () => {
+  await createConnection({
+    type: "postgres",
+    database: "leethub-db",
+    username: "postgres",
+    password: "postgres",
+    logging: true,
+    synchronize: true,
+    entities: [Post, User],
+  });
   const RedisStore = connectRedis(session);
   const redis = new Redis();
-
-  const orm = await MikroORM.init(microConfig);
-  await orm.getMigrator().up();
 
   const app = express();
 
@@ -52,7 +59,7 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
-    context: ({ req, res }) => ({ em: orm.em, req, res, redis }),
+    context: ({ req, res }) => ({ req, res, redis }),
   });
 
   appolloServer.applyMiddleware({
