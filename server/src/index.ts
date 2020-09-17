@@ -5,6 +5,7 @@ import cors from 'cors';
 import express from 'express';
 import session from 'express-session';
 import Redis from 'ioredis';
+import path from 'path';
 import { buildSchema } from 'type-graphql';
 import { createConnection } from 'typeorm';
 import { __prod__, COOKIE_NAME } from './constants';
@@ -17,15 +18,18 @@ import { UserResolver } from './resolvers/user';
 const PORT = 4000;
 
 const main = async () => {
-  await createConnection({
+  const conn = await createConnection({
     type: "postgres",
     database: "leethub-db",
     username: "postgres",
     password: "postgres",
     logging: true,
     synchronize: true,
+    migrations: [path.join(__dirname, "./migrations/*")],
     entities: [Post, User],
   });
+  await conn.runMigrations();
+
   const RedisStore = connectRedis(session);
   const redis = new Redis();
 
