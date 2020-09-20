@@ -1,6 +1,6 @@
 import argon2 from 'argon2';
 import { MyContext } from 'src/types';
-import { Arg, Ctx, Mutation, Query, Resolver } from 'type-graphql';
+import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from 'type-graphql';
 import { getConnection } from 'typeorm';
 import { v4 } from 'uuid';
 import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from '../constants';
@@ -10,8 +10,20 @@ import { validateRegister } from '../utils/validateRegister';
 import { UsernamePasswordInput } from './UsernamePasswordInput';
 import { UserResponse } from './UserResponse';
 
-@Resolver()
+@Resolver(User)
 export class UserResolver {
+  @FieldResolver(() => String)
+  email(@Root() user: User, @Ctx() { req }: MyContext) {
+    if (req.session.userId === user.id) {
+      // this is the current user and it is OK to show them
+      // their own email
+      return user.email;
+    }
+
+    // current user shouldn't see someone else's email
+    return "";
+  }
+
   @Mutation(() => UserResponse)
   async changePassword(
     @Arg("token") token: string,
