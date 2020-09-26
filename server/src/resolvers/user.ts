@@ -1,17 +1,27 @@
-import argon2 from 'argon2';
-import { MyContext } from 'src/types';
-import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from 'type-graphql';
-import { getConnection } from 'typeorm';
-import { v4 } from 'uuid';
-import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from '../constants';
-import { User } from '../entities/User';
-import { sendEmail } from '../utils/sendEmail';
-import { validateRegister } from '../utils/validateRegister';
-import { UsernamePasswordInput } from './UsernamePasswordInput';
-import { UserResponse } from './UserResponse';
+import argon2 from "argon2";
+import {
+  Arg,
+  Ctx,
+  FieldResolver,
+  Mutation,
+  Query,
+  Resolver,
+  Root,
+} from "type-graphql";
+import { getConnection } from "typeorm";
+import { v4 } from "uuid";
+import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from "../constants";
+import { User } from "../entities/User";
+import { MyContext } from "../types";
+import { sendEmail } from "../utils/sendEmail";
+import { validateRegister } from "../utils/validateRegister";
+import { UsernamePasswordInput } from "./UsernamePasswordInput";
+import { UserResponse } from "./UserResponse";
 
 @Resolver(User)
 export class UserResolver {
+  // Field-level email resolver
+  // resolve email field for non authenticated users
   @FieldResolver(() => String)
   email(@Root() user: User, @Ctx() { req }: MyContext) {
     if (req.session.userId === user.id) {
