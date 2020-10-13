@@ -94,7 +94,15 @@ const cacheExchangeConfig = {
           }
         );
       },
-
+      createPost: (_result: any, _args: any, cache: Cache, _info: any) => {
+        const allFields = cache.inspectFields("Query");
+        const fieldInfos = allFields.filter(
+          (info) => info.fieldName === "posts"
+        );
+        fieldInfos.forEach((fieldInfo) => {
+          cache.invalidate("Query", "posts", fieldInfo.arguments || {});
+        });
+      },
       logout: (
         _result: LogoutMutation,
         _args: any,

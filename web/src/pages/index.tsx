@@ -1,14 +1,14 @@
-import { withUrqlClient } from 'next-urql';
-import NextLink from 'next/link';
-import React, { useState } from 'react';
-import { Box, Button, Flex, Heading, Link, Stack, Text } from '@chakra-ui/core';
-import { Layout } from '@src/components/Layout';
-import { usePostsQuery } from '../generated/graphql';
-import { createUrqlClient } from '../utils/createUrqlClient';
+import { withUrqlClient } from "next-urql";
+import NextLink from "next/link";
+import React, { useState } from "react";
+import { Box, Button, Flex, Heading, Link, Stack, Text } from "@chakra-ui/core";
+import { Layout } from "@src/components/Layout";
+import { usePostsQuery } from "../generated/graphql";
+import { createUrqlClient } from "../utils/createUrqlClient";
 
 const Index = () => {
   const [variables, setVariables] = useState({
-    limit: 33,
+    limit: 15,
     cursor: null as null | string,
   });
   const [{ data, fetching }] = usePostsQuery({
@@ -35,7 +35,8 @@ const Index = () => {
           <Stack spacing={8}>
             {data!.posts.posts.map((post) => (
               <Box key={post.id} p={5} shadow="md" borderWidth="1px">
-                <Heading fontSize="xl">{post.title}</Heading>
+                <Heading fontSize="xl">{post.title}</Heading>{" "}
+                <Text>posted by @{post.author.username}</Text>
                 <Text mt={4}>{post.textSnippet}</Text>
               </Box>
             ))}
