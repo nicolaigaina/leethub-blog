@@ -1,10 +1,11 @@
-import { withUrqlClient } from "next-urql";
-import NextLink from "next/link";
-import React, { useState } from "react";
-import { Box, Button, Flex, Heading, Link, Stack, Text } from "@chakra-ui/core";
-import { Layout } from "@src/components/Layout";
-import { usePostsQuery } from "../generated/graphql";
-import { createUrqlClient } from "../utils/createUrqlClient";
+import { withUrqlClient } from 'next-urql';
+import NextLink from 'next/link';
+import React, { useState } from 'react';
+import { Box, Button, Flex, Heading, Link, Stack, Text } from '@chakra-ui/core';
+import { Layout } from '@src/components/Layout';
+import { VoteSection } from '@src/components/VoteSection';
+import { usePostsQuery } from '../generated/graphql';
+import { createUrqlClient } from '../utils/createUrqlClient';
 
 const Index = () => {
   const [variables, setVariables] = useState({
@@ -22,7 +23,7 @@ const Index = () => {
   } else {
     body = (
       <Layout>
-        <Flex align="center">
+        <Flex align="center" pl={4} pr={4}>
           <Heading>LeetHub</Heading>
           <NextLink href="/create-post">
             <Link ml="auto">Create post</Link>
@@ -34,11 +35,14 @@ const Index = () => {
         ) : (
           <Stack spacing={8}>
             {data!.posts.posts.map((post) => (
-              <Box key={post.id} p={5} shadow="md" borderWidth="1px">
-                <Heading fontSize="xl">{post.title}</Heading>{" "}
-                <Text>posted by @{post.author.username}</Text>
-                <Text mt={4}>{post.textSnippet}</Text>
-              </Box>
+              <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
+                <VoteSection post={post} />
+                <Box>
+                  <Heading fontSize="xl">{post.title}</Heading>
+                  <Text>posted by @{post.author.username}</Text>
+                  <Text mt={4}>{post.textSnippet}</Text>
+                </Box>
+              </Flex>
             ))}
           </Stack>
         )}

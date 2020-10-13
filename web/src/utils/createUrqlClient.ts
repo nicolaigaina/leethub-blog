@@ -1,3 +1,4 @@
+import gql from 'graphql-tag';
 import Router from 'next/router';
 import { dedupExchange, Exchange, fetchExchange, stringifyVariables } from 'urql';
 import { pipe, tap } from 'wonka';
@@ -7,7 +8,8 @@ import {
   LogoutMutation,
   MeDocument,
   MeQuery,
-  RegisterMutation
+  RegisterMutation,
+  VoteMutationVariables
 } from '../generated/graphql';
 import updateQueryHelper from './updateQueryHelper';
 
@@ -78,6 +80,38 @@ const cacheExchangeConfig = {
   },
   updates: {
     Mutation: {
+      vote: (_result: any, _args: any, cache: Cache, _info: any) => {
+        const { value, postId } = _args as VoteMutationVariables;
+        const data = cache.readFragment(
+          gql`
+            fragment _ on Post {
+              id
+              points
+              voteStatus
+            }
+          `,
+          {
+            id: postId,
+          } as any
+        );
+        if (data) {
+          if (data.voteStatus === value) {
+            // if voteStatus is 1 and we are upvoting -> don't do anything and return
+            return;
+          }
+          const newPoints =
+            (data.points as number) + (!data.voteStatus ? 1 : 2) * value;
+          cache.writeFragment(
+            gql`
+              fragment __ on Post {
+                points
+                voteStatus
+              }
+            `,
+            { id: postId, points: newPoints, voteStatus: value } as any
+          );
+        }
+      },
       login: (_result: LoginMutation, _args: any, cache: Cache, _info: any) => {
         updateQueryHelper<LoginMutation, MeQuery>(
           cache,
