@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BiDislike, BiLike } from 'react-icons/bi';
 import { Flex, IconButton } from '@chakra-ui/core';
 import { PostSnippetFragment, useVoteMutation } from '@src/generated/graphql';
 
@@ -14,10 +15,13 @@ export const VoteSection: React.FC<Props> = ({ post }) => {
   return (
     <Flex direction="column" justifyContent="center" alignItems="center" mr={4}>
       <IconButton
-        icon="chevron-up"
+        as={BiLike}
+        _hover={{ backgroundColor: "transparent" }}
+        cursor="pointer"
         aria-label="Upvote post"
+        backgroundColor="transparent"
         isLoading={votingState === "upvote-loading"}
-        variantColor={post.voteStatus === 1 ? "green" : undefined}
+        color={post.voteStatus === 1 ? "green.500" : "gray.400"}
         onClick={async () => {
           if (post.voteStatus === 1) {
             return;
@@ -32,10 +36,13 @@ export const VoteSection: React.FC<Props> = ({ post }) => {
       />
       {post.points}
       <IconButton
-        icon="chevron-down"
+        as={BiDislike}
+        _hover={{ backgroundColor: "transparent" }}
+        cursor="pointer"
         aria-label="Downvote post"
+        backgroundColor="transparent"
         isLoading={votingState === "downvote-loading"}
-        variantColor={post.voteStatus === -1 ? "red" : undefined}
+        color={post.voteStatus === -1 ? "red.600" : "gray.400"}
         onClick={async () => {
           if (post.voteStatus === -1) {
             return;

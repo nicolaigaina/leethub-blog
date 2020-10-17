@@ -110,9 +110,17 @@ export class PostResolver {
     const realLimitPlusOne = realLimit + 1;
     const userId = req.session.userId;
 
-    const replacements: any[] = [realLimitPlusOne, userId];
+    const replacements: any[] = [realLimitPlusOne];
+
+    if (userId) {
+      replacements.push(userId);
+    }
+
+    let cursorIdx = 3;
     if (cursor) {
       replacements.push(new Date(parseInt(cursor)));
+      cursorIdx = replacements.length; // if cursor is defined, replacements will contain it
+      // and we are changing the index to 2 based on replacements.length
     }
 
     const posts = await getConnection().query(
@@ -131,7 +139,7 @@ export class PostResolver {
         }
       from post p
       inner join public.user u on u.id = p."authorId"
-      ${cursor ? `where p."createdAt" < $3` : ""}
+      ${cursor ? `where p."createdAt" < ${cursorIdx}` : ""}
       order by p."createdAt" DESC
       limit $1
     `,
@@ -145,8 +153,8 @@ export class PostResolver {
   }
 
   @Query(() => Post, { nullable: true })
-  post(@Arg("id") id: number): Promise<Post | undefined> {
-    return Post.findOne(id);
+  post(@Arg("id", () => Int) id: number): Promise<Post | undefined> {
+    return Post.findOne(id, { relations: ["author"] });
   }
 
   @Mutation(() => Post)

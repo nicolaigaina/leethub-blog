@@ -23,13 +23,6 @@ const Index = () => {
   } else {
     body = (
       <Layout>
-        <Flex align="center" pl={4} pr={4}>
-          <Heading>LeetHub</Heading>
-          <NextLink href="/create-post">
-            <Link ml="auto">Create post</Link>
-          </NextLink>
-        </Flex>
-        <br />
         {fetching && !data ? (
           <Box>Loading...</Box>
         ) : (
@@ -38,7 +31,12 @@ const Index = () => {
               <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
                 <VoteSection post={post} />
                 <Box>
-                  <Heading fontSize="xl">{post.title}</Heading>
+                  <NextLink href="/post/[id]" as={`/post/${post.id}`}>
+                    <Link>
+                      <Heading fontSize="xl">{post.title}</Heading>
+                    </Link>
+                  </NextLink>
+
                   <Text>posted by @{post.author.username}</Text>
                   <Text mt={4}>{post.textSnippet}</Text>
                 </Box>
