@@ -4,6 +4,7 @@ import { dedupExchange, Exchange, fetchExchange, stringifyVariables } from 'urql
 import { pipe, tap } from 'wonka';
 import { Cache, cacheExchange, Resolver } from '@urql/exchange-graphcache';
 import {
+  DeletePostMutationVariables,
   LoginMutation,
   LogoutMutation,
   MeDocument,
@@ -81,8 +82,21 @@ const cacheExchangeConfig = {
   },
   updates: {
     Mutation: {
-      vote: (_result: any, _args: any, cache: Cache, _info: any) => {
-        const { value, postId } = _args as VoteMutationVariables;
+      deletePost: (
+        _result: any,
+        args: DeletePostMutationVariables,
+        cache: Cache,
+        _info: any
+      ) => {
+        cache.invalidate({ __typename: "Post", id: args.id });
+      },
+      vote: (
+        _result: any,
+        args: VoteMutationVariables,
+        cache: Cache,
+        _info: any
+      ) => {
+        const { value, postId } = args;
         const data = cache.readFragment(
           gql`
             fragment _ on Post {

@@ -1,10 +1,19 @@
 import { withUrqlClient } from 'next-urql';
 import NextLink from 'next/link';
 import React, { useState } from 'react';
-import { Box, Button, Flex, Heading, Link, Stack, Text } from '@chakra-ui/core';
+import {
+  Box,
+  Button,
+  Flex,
+  Heading,
+  IconButton,
+  Link,
+  Stack,
+  Text
+} from '@chakra-ui/core';
 import { Layout } from '@src/components/Layout';
 import { VoteSection } from '@src/components/VoteSection';
-import { usePostsQuery } from '../generated/graphql';
+import { useDeletePostMutation, usePostsQuery } from '../generated/graphql';
 import { createUrqlClient } from '../utils/createUrqlClient';
 
 const Index = () => {
@@ -15,6 +24,8 @@ const Index = () => {
   const [{ data, fetching }] = usePostsQuery({
     variables,
   });
+
+  const [, deletePost] = useDeletePostMutation();
 
   let body: JSX.Element;
 
@@ -27,21 +38,36 @@ const Index = () => {
           <Box>Loading...</Box>
         ) : (
           <Stack spacing={8}>
-            {data!.posts.posts.map((post) => (
-              <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
-                <VoteSection post={post} />
-                <Box>
-                  <NextLink href="/post/[id]" as={`/post/${post.id}`}>
-                    <Link>
-                      <Heading fontSize="xl">{post.title}</Heading>
-                    </Link>
-                  </NextLink>
+            {data!.posts.posts.map((post) =>
+              !post ? null : (
+                <Flex key={post.id} p={5} shadow="md" borderWidth="1px">
+                  <VoteSection post={post} />
+                  <Box flex={1}>
+                    <NextLink href="/post/[id]" as={`/post/${post.id}`}>
+                      <Link>
+                        <Heading fontSize="xl">{post.title}</Heading>
+                      </Link>
+                    </NextLink>
 
-                  <Text>posted by @{post.author.username}</Text>
-                  <Text mt={4}>{post.textSnippet}</Text>
-                </Box>
-              </Flex>
-            ))}
+                    <Text>posted by @{post.author.username}</Text>
+                    <Flex align="center">
+                      <Text flex={1} mt={4}>
+                        {post.textSnippet}
+                      </Text>
+                      <IconButton
+                        ml="auto"
+                        variantColor="red"
+                        icon="delete"
+                        aria-label="Delete Post"
+                        onClick={() => {
+                          deletePost({ id: post.id });
+                        }}
+                      />
+                    </Flex>
+                  </Box>
+                </Flex>
+              )
+            )}
           </Stack>
         )}
 
