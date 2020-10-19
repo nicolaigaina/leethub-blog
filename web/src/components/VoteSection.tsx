@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { BiDislike, BiLike } from 'react-icons/bi';
 import { Flex, IconButton } from '@chakra-ui/core';
-import { PostSnippetFragment, useVoteMutation } from '@src/generated/graphql';
+import { PostSnippetFragment, useMeQuery, useVoteMutation } from '@src/generated/graphql';
 
 interface Props {
   post: PostSnippetFragment;
 }
 
 export const VoteSection: React.FC<Props> = ({ post }) => {
+  const [{ data: meData }] = useMeQuery();
   const [, vote] = useVoteMutation();
   const [votingState, setVotingState] = useState<
     "upvote-loading" | "downvote-loading" | "not-laoding"
   >("not-laoding");
+  if (!meData?.me) {
+    return null;
+  }
   return (
     <Flex direction="column" justifyContent="center" alignItems="center" mr={4}>
       <IconButton
