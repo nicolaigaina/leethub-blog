@@ -1,7 +1,7 @@
 import { withUrqlClient } from 'next-urql';
 import NextLink from 'next/link';
 import React, { useState } from 'react';
-import { Box, Button, Flex, Heading, Link, Stack, Text } from '@chakra-ui/core';
+import { Box, Button, Flex, Heading, Link, Spinner, Stack, Text } from '@chakra-ui/core';
 import { Layout } from '@src/components/Layout';
 import { UpdateDeletePostButtons } from '@src/components/UpdateDeletePostButtons';
 import { VoteSection } from '@src/components/VoteSection';
@@ -26,7 +26,9 @@ const Index = () => {
     body = (
       <Layout>
         {fetching && !data ? (
-          <Box>Loading...</Box>
+          <Box>
+            <Spinner />
+          </Box>
         ) : (
           <Stack spacing={8}>
             {data!.posts.posts.map((post) =>

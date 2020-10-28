@@ -1,15 +1,20 @@
 import NextLink from 'next/link';
+import { useRouter } from 'next/router';
 import React from 'react';
 import { Box, Button, Flex, Heading, Link } from '@chakra-ui/core';
 import { useLogoutMutation, useMeQuery } from '../generated/graphql';
 import { isServer } from '../utils/isServer';
 
 export const NavBar: React.FC = () => {
+  const router = useRouter();
   const [{ data, fetching }] = useMeQuery({ pause: isServer() });
   const [{ fetching: logoutFetching }, logout] = useLogoutMutation();
   let body = null;
 
-  const onClick = async () => await logout();
+  const onClick = async () => {
+    await logout();
+    router.reload();
+  };
 
   // data is fetching
   if (fetching) {

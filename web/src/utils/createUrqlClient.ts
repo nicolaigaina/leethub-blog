@@ -69,6 +69,14 @@ const errorExchange: Exchange = ({ forward }) => (ops$) => {
   );
 };
 
+const invalidatePosts = (cache: Cache) => {
+  const allFields = cache.inspectFields("Query");
+  const fieldInfos = allFields.filter((info) => info.fieldName === "posts");
+  fieldInfos.forEach((fieldInfo) => {
+    cache.invalidate("Query", "posts", fieldInfo.arguments || {});
+  });
+};
+
 // Config for when graphql mutations are cached. It configures
 // fields that needs to be updated everytime mutations run.
 const cacheExchangeConfig = {
@@ -128,6 +136,7 @@ const cacheExchangeConfig = {
         }
       },
       login: (_result: LoginMutation, _args: any, cache: Cache, _info: any) => {
+        invalidatePosts(cache);
         updateQueryHelper<LoginMutation, MeQuery>(
           cache,
           { query: MeDocument },
@@ -144,13 +153,7 @@ const cacheExchangeConfig = {
         );
       },
       createPost: (_result: any, _args: any, cache: Cache, _info: any) => {
-        const allFields = cache.inspectFields("Query");
-        const fieldInfos = allFields.filter(
-          (info) => info.fieldName === "posts"
-        );
-        fieldInfos.forEach((fieldInfo) => {
-          cache.invalidate("Query", "posts", fieldInfo.arguments || {});
-        });
+        invalidatePosts(cache);
       },
       logout: (
         _result: LogoutMutation,
