@@ -1,8 +1,13 @@
-import gql from 'graphql-tag';
-import Router from 'next/router';
-import { dedupExchange, Exchange, fetchExchange, stringifyVariables } from 'urql';
-import { pipe, tap } from 'wonka';
-import { Cache, cacheExchange, Resolver } from '@urql/exchange-graphcache';
+import gql from "graphql-tag";
+import Router from "next/router";
+import {
+  dedupExchange,
+  Exchange,
+  fetchExchange,
+  stringifyVariables,
+} from "urql";
+import { pipe, tap } from "wonka";
+import { Cache, cacheExchange, Resolver } from "@urql/exchange-graphcache";
 import {
   DeletePostMutationVariables,
   LoginMutation,
@@ -10,10 +15,10 @@ import {
   MeDocument,
   MeQuery,
   RegisterMutation,
-  VoteMutationVariables
-} from '../generated/graphql';
-import { isServer } from './isServer';
-import updateQueryHelper from './updateQueryHelper';
+  VoteMutationVariables,
+} from "../generated/graphql";
+import { isServer } from "./isServer";
+import updateQueryHelper from "./updateQueryHelper";
 
 const cursorPagination = (): Resolver => {
   return (_parent, fieldArgs, cache, info) => {
@@ -202,7 +207,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
   }
 
   return {
-    url: "http://localhost:4000/graphql",
+    url: process.env.NEXT_PUBLIC_API_URL as string,
     fetchOptions: {
       credentials: "include" as const,
       headers: cookie
