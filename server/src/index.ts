@@ -1,32 +1,31 @@
-import 'reflect-metadata';
-import { ApolloServer } from 'apollo-server-express';
-import connectRedis from 'connect-redis';
-import cors from 'cors';
-import express from 'express';
-import session from 'express-session';
-import Redis from 'ioredis';
-import path from 'path';
-import { buildSchema } from 'type-graphql';
-import { createConnection } from 'typeorm';
-import { __prod__, COOKIE_NAME } from './constants';
-import { Post } from './entities/Post';
-import { Updoot } from './entities/Updoot';
-import { User } from './entities/User';
-import { HelloResolver } from './resolvers/hello';
-import { PostResolver } from './resolvers/post';
-import { UserResolver } from './resolvers/user';
-import { createUserLoader, createVoteStatusLoader } from './utils/dataLoaders';
+import "reflect-metadata";
+import "dotenv-safe/config";
+import { ApolloServer } from "apollo-server-express";
+import connectRedis from "connect-redis";
+import cors from "cors";
+import express from "express";
+import session from "express-session";
+import Redis from "ioredis";
+import path from "path";
+import { buildSchema } from "type-graphql";
+import { createConnection } from "typeorm";
+import { __prod__, COOKIE_NAME } from "./constants";
+import { Post } from "./entities/Post";
+import { Updoot } from "./entities/Updoot";
+import { User } from "./entities/User";
+import { HelloResolver } from "./resolvers/hello";
+import { PostResolver } from "./resolvers/post";
+import { UserResolver } from "./resolvers/user";
+import { createUserLoader, createVoteStatusLoader } from "./utils/dataLoaders";
 
-const PORT = 4000;
+const PORT = process.env.PORT;
 
 const main = async () => {
   const conn = await createConnection({
     type: "postgres",
-    database: "leethub-db",
-    username: "postgres",
-    password: "postgres",
+    url: process.env.DATABASE_URL,
     logging: true,
-    synchronize: true,
+    // synchronize: true,
     migrations: [path.join(__dirname, "./migrations/*")],
     entities: [Post, User, Updoot],
   });
@@ -34,13 +33,14 @@ const main = async () => {
   // await Post.delete({});
 
   const RedisStore = connectRedis(session);
-  const redis = new Redis();
+  const redis = new Redis(process.env.REDIS_URL);
 
   const app = express();
 
+  app.set("proxy", 1);
   app.use(
     cors({
-      origin: "http://localhost:3000",
+      origin: process.env.CORS_ORIGIN,
       credentials: true,
     })
   );
@@ -53,10 +53,11 @@ const main = async () => {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
         httpOnly: true,
         secure: __prod__, // cookie only works in https
-        sameSite: "lax", // csrf
+        sameSite: "lax", // csrf,
+        domain: __prod__ ? ".devponder.com" : undefined,
       },
       saveUninitialized: false,
-      secret: "somesecretkey",
+      secret: process.env.SESSION_SECRET,
       resave: false,
     })
   );
@@ -80,7 +81,7 @@ const main = async () => {
     cors: false,
   });
 
-  app.listen(PORT, () => {
+  app.listen(parseInt(PORT), () => {
     console.info(`Server started on localhost:${PORT}`);
   });
 };
