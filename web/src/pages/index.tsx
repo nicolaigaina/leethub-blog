@@ -1,31 +1,30 @@
-import { withUrqlClient } from 'next-urql';
 import NextLink from 'next/link';
-import React, { useState } from 'react';
+import React from 'react';
 import { Box, Button, Flex, Heading, Link, Spinner, Stack, Text } from '@chakra-ui/core';
 import { Layout } from '@src/components/Layout';
 import { UpdateDeletePostButtons } from '@src/components/UpdateDeletePostButtons';
 import { VoteSection } from '@src/components/VoteSection';
+import { withApollo } from '@src/utils/withApollo';
 import { useMeQuery, usePostsQuery } from '../generated/graphql';
-import { createUrqlClient } from '../utils/createUrqlClient';
 
 const Index = () => {
-  const [variables, setVariables] = useState({
-    limit: 15,
-    cursor: null as null | string,
-  });
-  const [{ data: meData }] = useMeQuery();
-  const [{ data, fetching }] = usePostsQuery({
-    variables,
+  const { data: meData } = useMeQuery();
+  const { data, loading, fetchMore, variables } = usePostsQuery({
+    variables: {
+      limit: 15,
+      cursor: null as null | string,
+    },
+    notifyOnNetworkStatusChange: true,
   });
 
   let body: JSX.Element;
 
-  if (!fetching && !data) {
+  if (!loading && !data) {
     body = <Box>Ooops!</Box>;
   } else {
     body = (
       <Layout>
-        {fetching && !data ? (
+        {loading && !data ? (
           <Box>
             <Spinner />
           </Box>
@@ -64,13 +63,15 @@ const Index = () => {
           <Flex>
             <Button
               onClick={() =>
-                setVariables({
-                  limit: variables.limit,
-                  cursor:
-                    data.posts.posts[data.posts.posts.length - 1].createdAt,
+                fetchMore({
+                  variables: {
+                    limit: variables?.limit,
+                    cursor:
+                      data.posts.posts[data.posts.posts.length - 1].createdAt,
+                  },
                 })
               }
-              isLoading={fetching}
+              isLoading={loading}
               m="auto"
               my={8}
             >
@@ -85,4 +86,4 @@ const Index = () => {
   return body;
 };
 
-export default withUrqlClient(createUrqlClient, { ssr: true })(Index);
+export default withApollo({ ssr: true })(Index);

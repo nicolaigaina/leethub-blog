@@ -1,15 +1,61 @@
+import gql from 'graphql-tag';
 import React, { useState } from 'react';
 import { BiDislike, BiLike } from 'react-icons/bi';
+import { ApolloCache } from '@apollo/client';
 import { Flex, IconButton } from '@chakra-ui/core';
-import { PostSnippetFragment, useMeQuery, useVoteMutation } from '@src/generated/graphql';
+import {
+  PostSnippetFragment,
+  useMeQuery,
+  useVoteMutation,
+  VoteMutation
+} from '@src/generated/graphql';
 
 interface Props {
   post: PostSnippetFragment;
 }
 
+const updateAfterVote = (
+  value: number,
+  postId: number,
+  cache: ApolloCache<VoteMutation>
+) => {
+  const data = cache.readFragment<{
+    id: number;
+    points: number;
+    voteStatus: number | null;
+  }>({
+    id: "Post:" + postId,
+    fragment: gql`
+      fragment _ on Post {
+        id
+        points
+        voteStatus
+      }
+    `,
+  });
+  if (data) {
+    if (data.voteStatus === value) {
+      // if voteStatus is 1 and we are upvoting -> don't do anything and return
+      return;
+    }
+    const newPoints =
+      (data.points as number) + (!data.voteStatus ? 1 : 2) * value;
+    cache.writeFragment({
+      id: "Post:" + postId,
+      fragment: gql`
+        fragment __ on Post {
+          points
+          voteStatus
+        }
+      `,
+      data: { points: newPoints, voteStatus: value },
+    });
+  }
+};
+
 export const VoteSection: React.FC<Props> = ({ post }) => {
-  const [{ data: meData }] = useMeQuery();
-  const [, vote] = useVoteMutation();
+  const { data: meData } = useMeQuery();
+  const [vote] = useVoteMutation();
   const [votingState, setVotingState] = useState<
     "upvote-loading" | "downvote-loading" | "not-laoding"
   >("not-laoding");
@@ -32,8 +78,11 @@ export const VoteSection: React.FC<Props> = ({ post }) => {
           }
           setVotingState("upvote-loading");
           await vote({
-            postId: post.id,
-            value: 1,
+            variables: {
+              postId: post.id,
+              value: 1,
+            },
+            update: (cache) => updateAfterVote(1, post.id, cache),
           });
           setVotingState("not-laoding");
         }}
@@ -53,8 +102,11 @@ export const VoteSection: React.FC<Props> = ({ post }) => {
           }
           setVotingState("downvote-loading");
           await vote({
-            postId: post.id,
-            value: -1,
+            variables: {
+              postId: post.id,
+              value: -1,
+            },
+            update: (cache) => updateAfterVote(-1, post.id, cache),
           });
           setVotingState("not-laoding");
         }}

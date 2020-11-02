@@ -1,23 +1,23 @@
-import NextLink from 'next/link';
-import { useRouter } from 'next/router';
-import React from 'react';
-import { Box, Button, Flex, Heading, Link } from '@chakra-ui/core';
-import { useLogoutMutation, useMeQuery } from '../generated/graphql';
-import { isServer } from '../utils/isServer';
+import NextLink from "next/link";
+import React from "react";
+import { useApolloClient } from "@apollo/client";
+import { Box, Button, Flex, Heading, Link } from "@chakra-ui/core";
+import { useLogoutMutation, useMeQuery } from "../generated/graphql";
+import { isServer } from "../utils/isServer";
 
 export const NavBar: React.FC = () => {
-  const router = useRouter();
-  const [{ data, fetching }] = useMeQuery({ pause: isServer() });
-  const [{ fetching: logoutFetching }, logout] = useLogoutMutation();
+  const { data, loading } = useMeQuery({ skip: isServer() });
+  const [logout, { loading: logoutFetching }] = useLogoutMutation();
+  const appoloClient = useApolloClient();
   let body = null;
 
   const onClick = async () => {
     await logout();
-    router.reload();
+    await appoloClient.resetStore();
   };
 
   // data is fetching
-  if (fetching) {
+  if (loading) {
     // user is not logged in
   } else if (!data?.me) {
     body = (
