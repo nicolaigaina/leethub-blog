@@ -1,10 +1,11 @@
-import { withUrqlClient } from 'next-urql';
-import { Box, Heading } from '@chakra-ui/core';
-import { Layout } from '@src/components/Layout';
-import { UpdateDeletePostButtons } from '@src/components/UpdateDeletePostButtons';
-import { useMeQuery } from '@src/generated/graphql';
-import { createUrqlClient } from '@src/utils/createUrqlClient';
-import { useGetPostFromUrl } from '@src/utils/useGetPostFromUrl';
+import { withUrqlClient } from "next-urql";
+import React from "react";
+import { Box, Heading, Spinner } from "@chakra-ui/core";
+import { Layout } from "@src/components/Layout";
+import { UpdateDeletePostButtons } from "@src/components/UpdateDeletePostButtons";
+import { useMeQuery } from "@src/generated/graphql";
+import { createUrqlClient } from "@src/utils/createUrqlClient";
+import { useGetPostFromUrl } from "@src/utils/useGetPostFromUrl";
 
 const Post = ({}) => {
   const [{ data, error, fetching }] = useGetPostFromUrl();
@@ -13,7 +14,9 @@ const Post = ({}) => {
   if (fetching) {
     return (
       <Layout>
-        <Box>loading...</Box>
+        <Box>
+          <Spinner />
+        </Box>
       </Layout>
     );
   }
